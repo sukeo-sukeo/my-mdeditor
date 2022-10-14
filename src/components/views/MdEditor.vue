@@ -3,64 +3,72 @@ import { ref } from '@vue/reactivity';
 import MdEditor from 'md-editor-v3';
 import 'md-editor-v3/lib/style.css';
 import { upload } from "../../lib/database.js"
+import { appConfig } from "../../config/app.config.js"
+import { storage } from "../../config/firebase.js";
+import { getDownloadURL, ref as storageRef, uploadBytes } from "firebase/storage";
 
 const title = ref("");
 const content = ref("");
+const category = ref("");
+const tags = ref([]);
 
-
-const save = (place) => {
-  if (!validation()) return;
+const save = (published) => {
+  if (published) {
+    if (!validation()) return;
+  }
   const data = {
     title: title.value,
-    content: content.value
+    content: content.value,
+    category: category.value,
+    tags: tags.value,
+    published,
   }
-  upload(data, place)
+  upload(data, "blog")
 };
 
 const validation = () => {
   if (!title.value) return false
+  if (!category.value) return false
+  if (!tags.value.length) return false
   return true
 }
 
 const uploadImg = async (files, callback) => {
   console.log("img保存!")
-  console.log(files);
-  const res = await Promise.all(
-    files.map((file) => {
-      return new Promise((rev, rej) => {
-        const form = new FormData();
-        form.append('file', file);
+  console.log(files[0]);
 
-        // axios
-        //   .post('/api/img/upload', form, {
-        //     headers: {
-        //       'Content-Type': 'multipart/form-data'
-        //     }
-        //   })
-        //   .then((res) => rev(res))
-        //   .catch((error) => rej(error));
-      });
-    })
-  );
+  const sRef = storageRef(storage, `images/${files[0].name}`);
 
-  callback(res.map((item) => console.log(item.data.url)));
+  await uploadBytes(sRef, files[0]);
+  const imgURL = await getDownloadURL(sRef)
+  console.log(imgURL);
+  
+  // await upload(formData, "images")
+  // callback(res.map((item) => console.log(item.data.url)));
 }
 
 </script>
 
 <template>
-  <div>
-    <input type="text" v-model="title">
-  </div>
-  <div>
-    <button class="bg-green-500 p-2 rounded" @click="save('publish')">投稿する！</button>
+  <v-row>
+    <v-text-field label="タイトル" variant="outlined" v-model="title"></v-text-field>
+  </v-row>
+  <v-row>
+    <v-btn @click="save({published: true})">投稿する</v-btn>
+    <v-btn @click="save({published: false})">下書きに保存</v-btn>
     <md-editor style="text-align: left;" v-model="content"
      preview-theme="github"
      language="en-US"
-     @on-save="save('draft')"
+     @on-save="save({published: false})"
      @on-upload-img="uploadImg"
      />
-  </div>
+  </v-row>
+  <v-row>
+    <v-card class="w-100 pa-6">
+      <v-text-field label="カテゴリー" variant="outlined" v-model="category"></v-text-field>
+      <v-text-field label="タグ" variant="outlined" v-model="tags"></v-text-field>
+    </v-card>
+  </v-row>
 </template>
 
 <style scoped>
