@@ -2,17 +2,41 @@
 import { ref } from '@vue/reactivity';
 import MdEditor from 'md-editor-v3';
 import 'md-editor-v3/lib/style.css';
-import { upload } from "../../lib/database.js"
-import { appConfig } from "../../config/app.config.js"
-import { storage } from "../../config/firebase.js";
-import { getDownloadURL, ref as storageRef, uploadBytes } from "firebase/storage";
+import { dataLoad, upload, uploadImage } from "../../lib/database.js"
+
+
+import { uuidv4 } from "@firebase/util";
+import { serverTimestamp } from '@firebase/firestore';
+import { onMounted } from '@vue/runtime-core';
+
+const editor = ref("")
 
 const title = ref("");
 const content = ref("");
 const category = ref("");
 const tags = ref([]);
 
-const save = (published) => {
+const imageList = ref([]);
+const categoryList = ref([]);
+const tagList = ref([]);
+
+const init = async () => {
+  imageList.value = await dataLoad("image");
+  categoryList.value = await dataLoad("category");
+  tagList.value = await dataLoad("tag");
+}
+
+init()
+
+// onMounted(() => {
+//   setTimeout(() => {
+//     console.log(imageList.value);
+//     console.log(categoryList.value);
+//     console.log(tagList.value);
+//   }, 1000)
+// })
+
+const save = async (published) => {
   if (published) {
     if (!validation()) return;
   }
@@ -20,10 +44,30 @@ const save = (published) => {
     title: title.value,
     content: content.value,
     category: category.value,
-    tags: tags.value,
+    tags: tags.value.split(","),
+    created_at: serverTimestamp(),
+    updated_at: "",
+    thumnail_url: "",
     published,
   }
-  upload(data, "blog")
+  // ブログ記事のアップロード
+  await upload(data, "blog");
+
+  // カテゴリーのアップロード
+  if (!categoryList.value.includes(data.category)) {
+    await upload({
+      category: data.category,
+      created_at: serverTimestamp(),
+    }, "category")
+  }
+
+  // タグのアップロード
+  for (const tag of data.tags) {
+    if (!tagList.value.includes(tag)) {
+      await upload({ tag, created_at: serverTimestamp() }, "tag");
+    }
+  }
+  init();
 };
 
 const validation = () => {
@@ -33,18 +77,38 @@ const validation = () => {
   return true
 }
 
-const uploadImg = async (files, callback) => {
+const uploadImg = async (files) => {
   console.log("img保存!")
-  console.log(files[0]);
 
-  const sRef = storageRef(storage, `images/${files[0].name}`);
+  for (const file of files) {
+    const uuid = uuidv4();
+    const imgURL = await uploadImage(file, uuid);
+    const data = {
+      storageId: uuid,
+      imgURL,
+      name: file.name,
+      category: category.value,
+      tags: tags.value,
+      created_at: serverTimestamp()
+    }
+    await upload(data, "image");
 
-  await uploadBytes(sRef, files[0]);
-  const imgURL = await getDownloadURL(sRef)
-  console.log(imgURL);
-  
-  // await upload(formData, "images")
-  // callback(res.map((item) => console.log(item.data.url)));
+    const word = `\n![${data.name}](${imgURL})\n`;
+    content.value = insertWord(getPos(), content.value, word);
+    
+  }
+}
+
+const getPos = () => {
+  const textarea = editor.value.$el.children[1].children[0].children[0];
+  const pos = textarea.selectionStart;
+  return pos
+}
+
+const insertWord = (pos, text, word) => {
+  const before = text.substr(0, pos);
+  const after = text.substr(pos, text.length);
+  return before + word + after;
 }
 
 </script>
@@ -56,7 +120,7 @@ const uploadImg = async (files, callback) => {
   <v-row>
     <v-btn @click="save({published: true})">投稿する</v-btn>
     <v-btn @click="save({published: false})">下書きに保存</v-btn>
-    <md-editor style="text-align: left;" v-model="content"
+    <md-editor ref="editor" style="text-align: left;" v-model="content"
      preview-theme="github"
      language="en-US"
      @on-save="save({published: false})"
