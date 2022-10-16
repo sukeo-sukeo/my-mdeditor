@@ -3,15 +3,13 @@ import { reactive, ref, toRefs } from '@vue/reactivity';
 import MdEditor from 'md-editor-v3';
 import 'md-editor-v3/lib/style.css';
 import { dataLoad, upload, uploadImage } from "../../lib/database.js"
-
-
 import { uuidv4 } from "@firebase/util";
 import { serverTimestamp } from '@firebase/firestore';
 import { onMounted } from '@vue/runtime-core';
 import AppSidebar from '../shared/AppSidebar.vue';
 import MediaLiblary from './MediaLiblary.vue';
 import CategoryManager from './CategoryManager.vue';
-import TagManager from './TagManager.vue';
+import TagsManager from './TagsManager.vue'
 
 const editor = ref("");
 
@@ -129,15 +127,22 @@ const showSidebar = ref({
 
 <template>
   <div class="mask" v-if="Object.values(showSidebar).filter(bool => bool).length" @click="Object.keys(showSidebar).forEach(key => showSidebar[key] = false )"></div>
-  <v-row>
-    <v-text-field label="タイトル" variant="outlined" v-model="title"></v-text-field>
+
+  <!-- title & button -->
+  <v-row class="align-center">
+    <v-col cols="12" sm="7">
+      <v-text-field label="タイトル" variant="outlined" v-model="title"></v-text-field>
+    </v-col>
+    <v-col cols="12" sm="auto">
+      <v-btn class="mx-1" color="success" @click="save({published: true})">投稿する</v-btn>
+      <v-btn class="mx-1" color="grey" @click="save({published: false})">下書きに保存</v-btn>
+      <v-btn class="mx-1" color="info" @click="showSidebar.media = true" icon="mdi-image">
+      </v-btn>
+    </v-col>
   </v-row>
+
+  <!-- editor -->
   <v-row>
-    <v-btn @click="save({published: true})">投稿する</v-btn>
-    <v-btn @click="save({published: false})">下書きに保存</v-btn>
-    <v-btn @click="showSidebar.media = true">
-      メディアライブラリ
-    </v-btn>
     <md-editor ref="editor" 
       v-model="content"
       style="text-align: left;" 
@@ -147,26 +152,30 @@ const showSidebar = ref({
       @on-upload-img="uploadImg"
       />
   </v-row>
+
+  <!-- metaデータ付与場 -->
   <v-row>
     <v-card class="w-100 pa-6">
-      <v-text-field label="カテゴリー" @click="showSidebar.category = true" variant="outlined" v-model="category" readonly></v-text-field>
+      <v-text-field label="カテゴリー" @click="showSidebar.category = true" variant="outlined" clearable v-model="category" readonly></v-text-field>
       <v-text-field label="タグ" 
-      @click="showSidebar.tag = true" variant="outlined" v-model="tags" readonly></v-text-field>
+      @click="showSidebar.tag = true" variant="outlined" clearable v-model="tags" readonly></v-text-field>
     </v-card>
   </v-row>
+
+  <!-- 以下サイドバー -->
   <!-- mediaLibrary -->
   <AppSidebar v-if="showSidebar.media" @sidebar-close="showSidebar.media = false">
     <MediaLiblary :col="1" @img-click="imgClick"/>
   </AppSidebar>
   <!-- categoryLibrary -->
   <AppSidebar v-if="showSidebar.category" @sidebar-close="showSidebar.category = false">
-    <v-text-field label="カテゴリー" variant="outlined" v-model="category"></v-text-field>
+    <v-text-field label="カテゴリー" variant="outlined" clearable v-model="category"></v-text-field>
     <CategoryManager @cate-click="insertCate" />
   </AppSidebar>
   <!-- tagLibrary -->
   <AppSidebar v-if="showSidebar.tag" @sidebar-close="showSidebar.tag = false">
-    <v-text-field label="タグ" variant="outlined" v-model="tags"></v-text-field>
-    <TagManager @tag-click="insertTag" />
+    <v-text-field label="タグ" variant="outlined" clearable v-model="tags"></v-text-field>
+    <TagsManager @tag-click="insertTag" />
   </AppSidebar>
 </template>
 
