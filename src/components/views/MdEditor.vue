@@ -10,6 +10,7 @@ import AppSidebar from '../shared/AppSidebar.vue';
 import MediaLiblary from './MediaLiblary.vue';
 import CategoryManager from './CategoryManager.vue';
 import TagsManager from './TagsManager.vue'
+import DraftManager from './DraftManager.vue';
 
 const editor = ref("");
 
@@ -17,11 +18,24 @@ const title = ref("");
 const content = ref("");
 const category = ref("");
 const tags = ref([]);
+const thumnail = ref("");
+const blogId = ref("")
 
 const blogList = ref([]);
 const imageList = ref([]);
 const categoryList = ref([]);
 const tagList = ref([]);
+
+const clearable = () => {
+  if (confirm("保存していないデータは失われます")) {
+    title.value = ""
+    content.value = ""
+    category.value = ""
+    tags.value = []
+    thumnail.value = ""
+    blogId.value = ""
+  }
+}
 
 const init = async () => {
   imageList.value = await dataLoad("image");
@@ -32,25 +46,29 @@ const init = async () => {
 
 init()
 
-const save = async (published) => {
-  if (published) {
-    if (!validation()) return;
+const save = async (bool) => {
+  if (bool.published) {
+    if (!validation()) {
+      alert("タイトル、カテゴリ、タグ、サムネイルを確認してください")
+      return
+    }
   }
+
   const data = {
     title: title.value,
     content: content.value,
     category: category.value,
-    tags: tags.value.split(","),
+    tags: typeof tags.value === "string" ? tags.value.split(",") : tags.value,
     created_at: serverTimestamp(),
     updated_at: "",
-    thumnail_url: "",
-    published,
+    thumnail_url: thumnail.value,
+    published: bool.published,
   }
   // ブログ記事のアップロード
-  await upload(data, "blog");
+  await upload(data, "blog", blogId.value);
 
   // カテゴリーのアップロード
-  if (!categoryList.value.filter(d => d["name"] === data.category)) {
+  if (!categoryList.value.filter(d => d["name"] === data.category).length) {
     await upload({
       name: data.category,
       created_at: serverTimestamp(),
@@ -59,23 +77,24 @@ const save = async (published) => {
 
   // タグのアップロード
   for (const tag of data.tags) {
-    if (!tagList.value.filter(d => d["name"] === tag)) {
+    if (!tagList.value.filter(d => d["name"] === tag).length) {
       await upload({ name:tag, created_at: serverTimestamp() }, "tag");
     }
   }
+
+  alert(bool.published ? "公開しました！" : "下書きに保存しました！")
   init();
 };
 
 const validation = () => {
   if (!title.value) return false
+  if (!thumnail.value) return false
   if (!category.value) return false
   if (!tags.value.length) return false
   return true
 }
 
 const uploadImg = async (files) => {
-  console.log("img保存!")
-
   for (const file of files) {
     const uuid = uuidv4();
     const imgURL = await uploadImage(file, uuid);
@@ -111,22 +130,43 @@ const insertWord = (pos, text, word) => {
 }
 
 const insertCate = (val) => category.value = val;
-const insertTag = (val) => tags.value.push(val);
+const insertTag = (val) => tags.value = tags.value.length ? `${tags.value},${val}` : val 
+const drawDraft = (blog) => {
+  console.log(blog);
+  if (confirm("編集中のデータは失われます")) {
+    title.value = blog.title
+    category.value = blog.category
+    tags.value = blog.tags
+    thumnail.value = blog.thumnail_url
+    blogId.value = blog.id
+  }
+}
 
 const imgClick = (url) => {
-  content.value = insertWord(getPos(), content.value, imgLink("", url));
+  if (showSidebar.value.media) {
+    content.value = insertWord(getPos(), content.value, imgLink("", url));
+    return
+  }
+  if (showSidebar.value.thumnail) {
+    thumnail.value = url
+    return
+  }
 }
+
+const closeSidebar = () => Object.keys(showSidebar.value).forEach(key => showSidebar.value[key] = false);
 
 const showSidebar = ref({
   media: false,
+  thumnail: false,
   category: false,
   tag: false,
+  draft: false,
 })
 
 </script>
 
 <template>
-  <div class="mask" v-if="Object.values(showSidebar).filter(bool => bool).length" @click="Object.keys(showSidebar).forEach(key => showSidebar[key] = false )"></div>
+  <div class="mask" v-if="Object.values(showSidebar).filter(bool => bool).length" @click="closeSidebar"></div>
 
   <!-- title & button -->
   <v-row class="align-center">
@@ -138,11 +178,21 @@ const showSidebar = ref({
       <v-btn class="mx-1" color="grey" @click="save({published: false})">下書きに保存</v-btn>
       <v-btn class="mx-1" color="info" @click="showSidebar.media = true" icon="mdi-image">
       </v-btn>
+      <v-btn class="mx-1" color="info" @click="showSidebar.draft = true" icon="mdi-file-download">
+      </v-btn>
     </v-col>
   </v-row>
 
   <!-- editor -->
   <v-row>
+    <span class="text-grey" v-if="blogId"> 
+      <v-chip>編集中</v-chip>
+      {{ blogId }}
+      <v-icon @click="clearable" style="cursor: pointer;">mdi-close</v-icon>
+    </span>
+    <span v-else>
+      <v-chip color="success">新規</v-chip>
+    </span>
     <md-editor ref="editor" 
       v-model="content"
       style="text-align: left;" 
@@ -154,28 +204,41 @@ const showSidebar = ref({
   </v-row>
 
   <!-- metaデータ付与場 -->
-  <v-row>
-    <v-card class="w-100 pa-6">
-      <v-text-field label="カテゴリー" @click="showSidebar.category = true" variant="outlined" clearable v-model="category" readonly></v-text-field>
-      <v-text-field label="タグ" 
-      @click="showSidebar.tag = true" variant="outlined" clearable v-model="tags" readonly></v-text-field>
-    </v-card>
-  </v-row>
+  <v-card class="pa-6 mt-10">
+    <v-row>
+      <v-col cols="12" sm="6">
+        <v-text-field label="カテゴリー" 
+        @click="showSidebar.category = true" variant="outlined" clearable v-model="category" readonly></v-text-field>
+        <v-text-field label="タグ" 
+        @click="showSidebar.tag = true" variant="outlined" clearable v-model="tags" readonly></v-text-field>
+        <v-text-field label="サムネイル" 
+        @click="showSidebar.thumnail = true" variant="outlined" clearable v-model="thumnail" readonly></v-text-field>
+      </v-col>
+      <v-col cols="12" sm="6">
+        <p v-show="!thumnail" class="text-center">プレビュー</p>
+        <v-img :src="thumnail"></v-img>
+      </v-col>
+    </v-row>
+  </v-card>
 
   <!-- 以下サイドバー -->
   <!-- mediaLibrary -->
-  <AppSidebar v-if="showSidebar.media" @sidebar-close="showSidebar.media = false">
+  <AppSidebar v-if="showSidebar.media || showSidebar.thumnail" @sidebar-close="closeSidebar">
     <MediaLiblary :col="1" @img-click="imgClick"/>
   </AppSidebar>
   <!-- categoryLibrary -->
-  <AppSidebar v-if="showSidebar.category" @sidebar-close="showSidebar.category = false">
+  <AppSidebar v-if="showSidebar.category" @sidebar-close="closeSidebar">
     <v-text-field label="カテゴリー" variant="outlined" clearable v-model="category"></v-text-field>
     <CategoryManager @cate-click="insertCate" />
   </AppSidebar>
   <!-- tagLibrary -->
-  <AppSidebar v-if="showSidebar.tag" @sidebar-close="showSidebar.tag = false">
+  <AppSidebar v-if="showSidebar.tag" @sidebar-close="closeSidebar">
     <v-text-field label="タグ" variant="outlined" clearable v-model="tags"></v-text-field>
     <TagsManager @tag-click="insertTag" />
+  </AppSidebar>
+  <!-- draftLibrary -->
+  <AppSidebar v-if="showSidebar.draft" @sidebar-close="closeSidebar">
+    <DraftManager @blog-click="drawDraft" />
   </AppSidebar>
 </template>
 

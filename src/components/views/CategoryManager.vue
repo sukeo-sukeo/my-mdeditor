@@ -16,8 +16,8 @@ init()
 
 <template>
   <v-list v-if="categoryList.length">
-    <v-list-item v-for="cate in categoryList" :key="cate" @click="emits('cate-click', cate.category)">
-      {{ cate.category }}
+    <v-list-item v-for="cate in categoryList" :key="cate" @click="emits('cate-click', cate.name)">
+      {{ cate.name }}
     </v-list-item>
   </v-list>
 </template>

@@ -7,11 +7,11 @@ import {
 } from "firebase/storage";
 import { db, storage } from "../config/firebase.js"
 
-export const upload = async (data, place) => {
-  console.log(data);
-  const docRef = await addDoc(collection(db, place), data);
-  console.log(docRef.id);
-  return docRef.id
+export const upload = async (data, place, id = "") => {
+  console.log(id);
+  const docRef = id && place === "blog" ?
+    await setDoc(doc(db, place, id), data) :
+    await addDoc(collection(db, place), data);
 };
 
 export const uploadImage = async (file, uuid) => {
@@ -27,6 +27,7 @@ export const dataLoad = async (place) => {
   
   docRefs.forEach((d) => {
     const data = d.data();
+    data.id = d.id
     // console.log(data);
     result.push(data);
   });
