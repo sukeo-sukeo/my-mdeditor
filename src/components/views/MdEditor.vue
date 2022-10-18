@@ -21,7 +21,7 @@ const tags = ref([]);
 const thumnail = ref("");
 const blogId = ref("")
 
-const blogData = ref("");
+const blogSingle = ref("");
 
 const blogList = ref([]);
 const imageList = ref([]);
@@ -48,7 +48,6 @@ const init = async () => {
 init()
 
 const save = async (bool) => {
-
   // 公開ボタンを押したとき
   if (bool.published) {
     if (!validation()) {
@@ -56,15 +55,18 @@ const save = async (bool) => {
       return
     }
   }
-
   // 下書き保存ボタンを押したとき
+  let updated_at;
   if (!bool.published) {
-    if (blogData.value) {
+    if (blogSingle.value) {
       // 公開中の記事を下書き保存しようとしたとき
-      if (blogData.value.published) {
+      if (blogSingle.value.published) {
         if (confirm("公開中の記事を変更しますか？")) {
+          // 新規下書きは作成されない
           bool.published = true
+          updated_at = true
         } else {
+          // 新規下書き保存
           blogId.value = ""
         }
       }
@@ -77,7 +79,7 @@ const save = async (bool) => {
     category: category.value,
     tags: typeof tags.value === "string" ? tags.value.split(",") : tags.value,
     created_at: serverTimestamp(),
-    updated_at: "",
+    updated_at: updated_at ? serverTimestamp() : "",
     thumnail_url: thumnail.value,
     published: bool.published,
   }
@@ -149,15 +151,24 @@ const insertWord = (pos, text, word) => {
 const insertCate = (val) => category.value = val;
 const insertTag = (val) => tags.value = tags.value.length ? `${tags.value},${val}` : val;
 const drawDraft = (blog) => {
-  console.log(blog);
-  if (confirm("編集中のデータは失われます")) {
-    title.value = blog.title
+  if (blogId.value) {
+    if (confirm("編集中のデータは失われます")) {
+      title.value = blog.title
+      content.value = blog.content
+      category.value = blog.category
+      tags.value = blog.tags
+      thumnail.value = blog.thumnail_url
+      blogId.value = blog.id
+      blogSingle.value = blog
+    }
+  } else {
+     title.value = blog.title
     content.value = blog.content
     category.value = blog.category
     tags.value = blog.tags
     thumnail.value = blog.thumnail_url
     blogId.value = blog.id
-    blogData.value = blog
+    blogSingle.value = blog
   }
 }
 
@@ -190,7 +201,7 @@ const showSidebar = ref({
   <!-- title & button -->
   <v-row class="align-center">
     <v-col cols="12" sm="7">
-      <v-text-field label="タイトル" variant="outlined" v-model="title"></v-text-field>
+      <v-text-field label="タイトル" clearable variant="outlined" v-model="title"></v-text-field>
     </v-col>
     <v-col cols="12" sm="auto">
       <v-btn class="mx-1" color="success" @click="save({published: true})">投稿する</v-btn>
@@ -206,11 +217,12 @@ const showSidebar = ref({
   <v-row>
     <span class="text-grey" v-if="blogId"> 
       <v-chip>編集中</v-chip>
-      {{ blogId }}
-      <v-icon @click="clearable" style="cursor: pointer;">mdi-close</v-icon>
     </span>
     <span v-else>
       <v-chip color="success">新規</v-chip>
+    </span>
+    <span v-if="content.length">
+      <v-icon @click="clearable" color="grey" style="cursor: pointer;">mdi-close</v-icon>
     </span>
     <md-editor ref="editor" 
       v-model="content"

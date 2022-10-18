@@ -9,6 +9,7 @@ const blogList = ref([]);
 
 const init = async () => {
   blogList.value = await dataLoad("blog");
+  console.log(blogList.value);
 }
 
 const deleteBlog = async (id) => {
