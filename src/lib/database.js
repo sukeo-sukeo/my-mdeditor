@@ -1,6 +1,7 @@
-import { addDoc, collection, doc, getDocs, setDoc } from "firebase/firestore";
+import { addDoc, collection, deleteDoc, doc, getDoc, getDocs, setDoc } from "firebase/firestore";
 import { appConfig } from "../config/app.config.js";
 import {
+  deleteObject,
   getDownloadURL,
   ref as storageRef,
   uploadBytes,
@@ -8,7 +9,6 @@ import {
 import { db, storage } from "../config/firebase.js"
 
 export const upload = async (data, place, id = "") => {
-  console.log(id);
   const docRef = id && place === "blog" ?
     await setDoc(doc(db, place, id), data) :
     await addDoc(collection(db, place), data);
@@ -32,4 +32,16 @@ export const dataLoad = async (place) => {
     result.push(data);
   });
   return result
+}
+
+export const deleteStorage = async (id, name) => {
+  const docRef = doc(db, "image", id);
+  const snapShot = await getDoc(docRef);
+  const storageId = snapShot.data().storageId;
+  const deleteRef = storageRef(storage, `images/${storageId}/${name}`);
+  await deleteObject(deleteRef)
+} 
+
+export const deleteData = async (place, id) => {
+  await deleteDoc(doc(db, place, id));
 }

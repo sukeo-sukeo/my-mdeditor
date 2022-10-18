@@ -21,23 +21,24 @@ const tags = ref([]);
 const thumnail = ref("");
 const blogId = ref("")
 
+const blogData = ref("");
+
 const blogList = ref([]);
 const imageList = ref([]);
 const categoryList = ref([]);
 const tagList = ref([]);
 
 const clearable = () => {
-  if (confirm("保存していないデータは失われます")) {
-    title.value = ""
-    content.value = ""
-    category.value = ""
-    tags.value = []
-    thumnail.value = ""
-    blogId.value = ""
-  }
+  title.value = ""
+  content.value = ""
+  category.value = ""
+  tags.value = []
+  thumnail.value = ""
+  blogId.value = ""
 }
 
 const init = async () => {
+  clearable();
   imageList.value = await dataLoad("image");
   categoryList.value = await dataLoad("category");
   tagList.value = await dataLoad("tag");
@@ -47,6 +48,8 @@ const init = async () => {
 init()
 
 const save = async (bool) => {
+
+  // 公開ボタンを押したとき
   if (bool.published) {
     if (!validation()) {
       alert("タイトル、カテゴリ、タグ、サムネイルを確認してください")
@@ -54,6 +57,20 @@ const save = async (bool) => {
     }
   }
 
+  // 下書き保存ボタンを押したとき
+  if (!bool.published) {
+    if (blogData.value) {
+      // 公開中の記事を下書き保存しようとしたとき
+      if (blogData.value.published) {
+        if (confirm("公開中の記事を変更しますか？")) {
+          bool.published = true
+        } else {
+          blogId.value = ""
+        }
+      }
+    }
+  }
+  
   const data = {
     title: title.value,
     content: content.value,
@@ -130,15 +147,17 @@ const insertWord = (pos, text, word) => {
 }
 
 const insertCate = (val) => category.value = val;
-const insertTag = (val) => tags.value = tags.value.length ? `${tags.value},${val}` : val 
+const insertTag = (val) => tags.value = tags.value.length ? `${tags.value},${val}` : val;
 const drawDraft = (blog) => {
   console.log(blog);
   if (confirm("編集中のデータは失われます")) {
     title.value = blog.title
+    content.value = blog.content
     category.value = blog.category
     tags.value = blog.tags
     thumnail.value = blog.thumnail_url
     blogId.value = blog.id
+    blogData.value = blog
   }
 }
 
