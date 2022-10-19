@@ -33,9 +33,16 @@ init();
 <template>
   <template v-if="imageList.length">
     <v-row>
-      <v-col :cols="col" class="d-flex align-end" v-for="image in imageList" :key="image" @click="emits('img-click', image.imgURL)">
-        <v-img :src="image.imgURL" :alt="image?.text" style="cursor: pointer;"></v-img>
-        <v-icon @click.stop="deleteImage(image)">mdi-delete</v-icon>
+      <v-col :cols="col" class="d-flex" v-for="image in imageList" :key="image" @click="emits('img-click', image.imgURL)">
+        <v-col cols="auto">
+          <v-img :src="image.imgURL" :alt="image?.text" style="cursor: pointer;"></v-img>
+          <span class="text-caption">
+            {{ image.name }}
+          </span>
+        </v-col>
+        <v-col>
+          <v-icon @click.stop="deleteImage(image)">mdi-delete</v-icon>
+        </v-col>
       </v-col>
     </v-row>
   </template>

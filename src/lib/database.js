@@ -12,6 +12,7 @@ export const upload = async (data, place, id = "") => {
   const docRef = id && place === "blog" ?
     await setDoc(doc(db, place, id), data) :
     await addDoc(collection(db, place), data);
+  // return docRef.id
 };
 
 export const uploadImage = async (file, uuid) => {

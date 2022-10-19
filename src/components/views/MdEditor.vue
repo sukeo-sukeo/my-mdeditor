@@ -49,9 +49,9 @@ const init = async () => {
 init()
 
 const save = async (bool) => {
-  if (!confirm("保存しますか？")) return
   // 公開ボタンを押したとき
   if (bool.published) {
+    if (!confirm("公開しますか？")) return
     if (!validation()) {
       alert("タイトル、カテゴリ、タグ、サムネイルを確認してください")
       return
@@ -60,16 +60,17 @@ const save = async (bool) => {
   // 下書き保存ボタンを押したとき
   let updated_at;
   if (!bool.published) {
+    if (!confirm("保存しますか？")) return
     if (blogSingle.value) {
-      // 公開中の記事を下書き保存しようとしたとき
+      // 公開中の記事の場合
       if (blogSingle.value.published) {
         if (confirm("公開中の記事を変更しますか？")) {
-          // 新規下書きは作成されない
+          // 上書き保存
           bool.published = true
           updated_at = true
         } else {
           // 新規下書き保存
-          // 新規フィールド作成しdocIdを取得しそいつをいれる↓
+          // const id = await upload("", "blog");
           blogId.value = ""
         }
       }
