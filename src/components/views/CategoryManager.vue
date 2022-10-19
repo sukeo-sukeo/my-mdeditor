@@ -26,6 +26,7 @@ init()
         {{ cate.name }}
       </span>
        <v-icon @click.stop="deleteCate(cate.id)" class="float-right">mdi-delete</v-icon>
+       <v-divider class="my-2"></v-divider>
     </v-list-item>
   </v-list>
 </template>

@@ -35,6 +35,7 @@ const clearable = () => {
   tags.value = []
   thumnail.value = ""
   blogId.value = ""
+  blogSingle.value = ""
 }
 
 const init = async () => {
@@ -48,6 +49,7 @@ const init = async () => {
 init()
 
 const save = async (bool) => {
+  if (!confirm("保存しますか？")) return
   // 公開ボタンを押したとき
   if (bool.published) {
     if (!validation()) {
@@ -67,6 +69,7 @@ const save = async (bool) => {
           updated_at = true
         } else {
           // 新規下書き保存
+          // 新規フィールド作成しdocIdを取得しそいつをいれる↓
           blogId.value = ""
         }
       }
@@ -151,6 +154,7 @@ const insertWord = (pos, text, word) => {
 const insertCate = (val) => category.value = val;
 const insertTag = (val) => tags.value = tags.value.length ? `${tags.value},${val}` : val;
 const drawDraft = (blog) => {
+  console.log(blogId.value);
   if (blogId.value) {
     if (confirm("編集中のデータは失われます")) {
       title.value = blog.title
@@ -196,81 +200,84 @@ const showSidebar = ref({
 </script>
 
 <template>
-  <div class="mask" v-if="Object.values(showSidebar).filter(bool => bool).length" @click="closeSidebar"></div>
+  <div>
 
-  <!-- title & button -->
-  <v-row class="align-center">
-    <v-col cols="12" sm="7">
-      <v-text-field label="タイトル" clearable variant="outlined" v-model="title"></v-text-field>
-    </v-col>
-    <v-col cols="12" sm="auto">
-      <v-btn class="mx-1" color="success" @click="save({published: true})">投稿する</v-btn>
-      <v-btn class="mx-1" color="grey" @click="save({published: false})">下書きに保存</v-btn>
-      <v-btn class="mx-1" color="info" @click="showSidebar.media = true" icon="mdi-image">
-      </v-btn>
-      <v-btn class="mx-1" color="info" @click="showSidebar.draft = true" icon="mdi-file-download">
-      </v-btn>
-    </v-col>
-  </v-row>
-
-  <!-- editor -->
-  <v-row>
-    <span class="text-grey" v-if="blogId"> 
-      <v-chip>編集中</v-chip>
-    </span>
-    <span v-else>
-      <v-chip color="success">新規</v-chip>
-    </span>
-    <span v-if="content.length">
-      <v-icon @click="clearable" color="grey" style="cursor: pointer;">mdi-close</v-icon>
-    </span>
-    <md-editor ref="editor" 
-      v-model="content"
-      style="text-align: left;" 
-      preview-theme="github"
-      language="en-US"
-      @on-save="save({published: false})"
-      @on-upload-img="uploadImg"
-      />
-  </v-row>
-
-  <!-- metaデータ付与場 -->
-  <v-card class="pa-6 mt-10">
-    <v-row>
-      <v-col cols="12" sm="6">
-        <v-text-field label="カテゴリー" 
-        @click="showSidebar.category = true" variant="outlined" clearable v-model="category" readonly></v-text-field>
-        <v-text-field label="タグ" 
-        @click="showSidebar.tag = true" variant="outlined" clearable v-model="tags" readonly></v-text-field>
-        <v-text-field label="サムネイル" 
-        @click="showSidebar.thumnail = true" variant="outlined" clearable v-model="thumnail" readonly></v-text-field>
+    <div class="mask" v-if="Object.values(showSidebar).filter(bool => bool).length" @click="closeSidebar"></div>
+  
+    <!-- title & button -->
+    <v-row class="align-center">
+      <v-col cols="12" sm="7">
+        <v-text-field label="タイトル" clearable variant="outlined" v-model="title"></v-text-field>
       </v-col>
-      <v-col cols="12" sm="6">
-        <p v-show="!thumnail" class="text-center">プレビュー</p>
-        <v-img :src="thumnail"></v-img>
+      <v-col cols="12" sm="auto">
+        <v-btn class="mx-1" color="success" @click="save({published: true})">投稿する</v-btn>
+        <v-btn class="mx-1" color="grey" @click="save({published: false})">下書きに保存</v-btn>
+        <v-btn class="mx-1" color="info" @click="showSidebar.media = true" icon="mdi-image">
+        </v-btn>
+        <v-btn class="mx-1" color="info" @click="showSidebar.draft = true" icon="mdi-file-download">
+        </v-btn>
       </v-col>
     </v-row>
-  </v-card>
-
-  <!-- 以下サイドバー -->
-  <!-- mediaLibrary -->
-  <AppSidebar v-if="showSidebar.media || showSidebar.thumnail" @sidebar-close="closeSidebar">
-    <MediaLiblary :col="1" @img-click="imgClick"/>
-  </AppSidebar>
-  <!-- categoryLibrary -->
-  <AppSidebar v-if="showSidebar.category" @sidebar-close="closeSidebar">
-    <v-text-field label="カテゴリー" variant="outlined" clearable v-model="category"></v-text-field>
-    <CategoryManager @cate-click="insertCate" />
-  </AppSidebar>
-  <!-- tagLibrary -->
-  <AppSidebar v-if="showSidebar.tag" @sidebar-close="closeSidebar">
-    <v-text-field label="タグ" variant="outlined" clearable v-model="tags"></v-text-field>
-    <TagsManager @tag-click="insertTag" />
-  </AppSidebar>
-  <!-- draftLibrary -->
-  <AppSidebar v-if="showSidebar.draft" @sidebar-close="closeSidebar">
-    <DraftManager @blog-click="drawDraft" />
-  </AppSidebar>
+  
+    <!-- editor -->
+    <v-row>
+      <span class="text-grey" v-if="blogId"> 
+        <v-chip>編集中</v-chip>
+      </span>
+      <span v-else>
+        <v-chip color="success">新規</v-chip>
+      </span>
+      <span v-if="content.length">
+        <v-icon @click="clearable" color="grey" style="cursor: pointer;">mdi-close</v-icon>
+      </span>
+      <md-editor ref="editor" 
+        v-model="content"
+        style="text-align: left;" 
+        preview-theme="github"
+        language="en-US"
+        @on-save="save({published: false})"
+        @on-upload-img="uploadImg"
+        />
+    </v-row>
+  
+    <!-- metaデータ付与場 -->
+    <v-card class="pa-6 mt-10">
+      <v-row>
+        <v-col cols="12" sm="6">
+          <v-text-field label="カテゴリー" 
+          @click="showSidebar.category = true" variant="outlined" clearable v-model="category" readonly></v-text-field>
+          <v-text-field label="タグ" 
+          @click="showSidebar.tag = true" variant="outlined" clearable v-model="tags" readonly></v-text-field>
+          <v-text-field label="サムネイル" 
+          @click="showSidebar.thumnail = true" variant="outlined" clearable v-model="thumnail" readonly></v-text-field>
+        </v-col>
+        <v-col cols="12" sm="6">
+          <p v-show="!thumnail" class="text-center">プレビュー</p>
+          <v-img :src="thumnail"></v-img>
+        </v-col>
+      </v-row>
+    </v-card>
+  
+    <!-- 以下サイドバー -->
+    <!-- mediaLibrary -->
+    <AppSidebar v-if="showSidebar.media || showSidebar.thumnail" @sidebar-close="closeSidebar">
+      <MediaLiblary :col="1" @img-click="imgClick"/>
+    </AppSidebar>
+    <!-- categoryLibrary -->
+    <AppSidebar v-if="showSidebar.category" @sidebar-close="closeSidebar">
+      <v-text-field label="カテゴリー" variant="outlined" clearable v-model="category"></v-text-field>
+      <CategoryManager @cate-click="insertCate" />
+    </AppSidebar>
+    <!-- tagLibrary -->
+    <AppSidebar v-if="showSidebar.tag" @sidebar-close="closeSidebar">
+      <v-text-field label="タグ" variant="outlined" clearable v-model="tags"></v-text-field>
+      <TagsManager @tag-click="insertTag" />
+    </AppSidebar>
+    <!-- draftLibrary -->
+    <AppSidebar v-if="showSidebar.draft" @sidebar-close="closeSidebar">
+      <DraftManager @blog-click="drawDraft" />
+    </AppSidebar>
+  </div>
 </template>
 
 <style scoped>

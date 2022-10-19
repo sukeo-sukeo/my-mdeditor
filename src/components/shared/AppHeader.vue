@@ -31,16 +31,15 @@ watch(showSidebar, () => {
 <template>
   <v-app-bar elevation="0" class="select-none" color="transparent">
     
+    <h3 class="ms-10" style="cursor: pointer;" @click="router.push('/')">my editor</h3>    
+    <v-spacer></v-spacer>
+    
     <template v-if="!props.isLogin">
       <template v-if="xs">
         <v-spacer></v-spacer>
         <v-btn :icon="showSidebar ? 'mdi-close' : 'mdi-menu'" @click="showSidebar = !showSidebar"></v-btn>
       </template>
       <template v-else>
-        <h3 class="ms-10" style="cursor: pointer;" @click="router.push('/')">my editor</h3>    
-        
-        <v-spacer></v-spacer>
-    
         <v-tabs>
           <router-link v-for="route in appConfig.routeNames" :key="route" :to="route">
             <v-tab class="text-black">

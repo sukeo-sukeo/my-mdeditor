@@ -30,6 +30,7 @@ init()
       </span>
       <v-chip :color="blog.published ? 'success' : 'gray'">{{ blog.published ? "公開" : "下書き" }}</v-chip>
       <v-icon @click.stop="deleteBlog(blog.id)" class="float-right">mdi-delete</v-icon>
+      <v-divider class="my-2"></v-divider>
     </v-list-item>
   </v-list>
 </template>

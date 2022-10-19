@@ -4,7 +4,8 @@ import { computed } from "@vue/runtime-core";
 import { dataLoad, deleteData, deleteStorage } from "../../lib/database";
 
 const props = defineProps({
-  col: { type: Number, default: 4 }
+  routePath: String,
+  col: { type: Number, default: 3 }
 });
 const emits = defineEmits([
   "img-click"
@@ -22,6 +23,8 @@ const deleteImage = async (image) => {
   await deleteData("image", image.id);
   await init();
 }
+
+console.log(props.routePath);
 
 init();
 

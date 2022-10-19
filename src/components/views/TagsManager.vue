@@ -26,6 +26,7 @@ init()
         {{ tag.name }}
       </span>
        <v-icon @click.stop="deleteTag(tag.id)" class="float-right">mdi-delete</v-icon>
+       <v-divider class="my-2"></v-divider>
     </v-list-item>
   </v-list>
 </template>
