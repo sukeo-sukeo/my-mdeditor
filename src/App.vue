@@ -11,6 +11,10 @@ const sidebarHundle = (bool) => showSidebar.value = bool;
 const route = useRoute();
 const routePath = computed(() => route.path)
 
+watch(routePath, () => {
+  console.log(routePath.value);
+})
+
 </script>
 
 <template>

@@ -19,7 +19,7 @@ const content = ref("");
 const category = ref("");
 const tags = ref([]);
 const thumnail = ref("");
-const blogId = ref("")
+const blogId = ref("");
 
 const blogSingle = ref("");
 
@@ -51,14 +51,13 @@ init()
 const save = async (bool) => {
   // 公開ボタンを押したとき
   if (bool.published) {
-    if (!confirm("公開しますか？")) return
     if (!validation()) {
       alert("タイトル、カテゴリ、タグ、サムネイルを確認してください")
       return
     }
+    if (!confirm(blogSingle.value.published ? "公開中の記事を更新しますか" :"公開しますか")) return
   }
   // 下書き保存ボタンを押したとき
-  let updated_at;
   if (!bool.published) {
     if (!confirm("保存しますか？")) return
     if (blogSingle.value) {
@@ -67,14 +66,17 @@ const save = async (bool) => {
         if (confirm("公開中の記事を変更しますか？")) {
           // 上書き保存
           bool.published = true
-          updated_at = true
         } else {
           // 新規下書き保存
-          // const id = await upload("", "blog");
           blogId.value = ""
         }
       }
     }
+  }
+
+  let updated_at;
+  if (bool.published && blogSingle.value.published) {
+    updated_at = true
   }
   
   const data = {
@@ -222,11 +224,15 @@ const showSidebar = ref({
   
     <!-- editor -->
     <v-row>
-      <span class="text-grey" v-if="blogId"> 
-        <v-chip>編集中</v-chip>
+      <span class="text-grey">
+        <v-chip :color="blogId ? '':'success'">
+          {{ blogId ? "編集中": "新規" }}
+        </v-chip>
       </span>
-      <span v-else>
-        <v-chip color="success">新規</v-chip>
+      <span class="text-grey" v-if="blogSingle">
+        <v-chip :color="blogSingle.published ? 'info' : ''">
+          {{ blogSingle.published ? "公開中" : "下書き" }}
+        </v-chip>
       </span>
       <span v-if="content.length">
         <v-icon @click="clearable" color="grey" style="cursor: pointer;">mdi-close</v-icon>
@@ -275,7 +281,7 @@ const showSidebar = ref({
       <TagsManager @tag-click="insertTag" />
     </AppSidebar>
     <!-- draftLibrary -->
-    <AppSidebar v-if="showSidebar.draft" @sidebar-close="closeSidebar">
+    <AppSidebar v-if="showSidebar.draft" @sidebar-close="closeSidebar" :barWidth="75">
       <DraftManager @blog-click="drawDraft" />
     </AppSidebar>
   </div>
