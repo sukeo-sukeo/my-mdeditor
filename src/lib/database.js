@@ -54,3 +54,23 @@ export const deleteStorage = async (id, name) => {
 export const deleteData = async (place, id) => {
   await deleteDoc(doc(db, place, id));
 }
+
+export const existInBlog = async (pageKey, word) => {
+  const blogList = await dataLoad("blog");
+  const existed = blogList.filter(d => {
+    if (typeof d[pageKey] === "string") {
+      return d[pageKey] === word
+    }
+    if (typeof d[pageKey] === "array") {
+      return d[pageKey].includes(word)
+    }
+
+  })
+  return existed.length
+}
+
+export const updateData = async (place, updated, targetId) => {
+  // categoryのアップデート
+  console.log(place, updated, targetId);
+  // blogのアップデート
+}

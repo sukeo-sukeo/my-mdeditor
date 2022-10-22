@@ -50,7 +50,7 @@ init()
         <td>
           {{ idx + 1 }}
         </td>
-        <td @click="routePath === '/draft' ? router.push({path: `/${blog.id}`}) : emits('blog-click', blog)" style="cursor: pointer;">
+        <td @click="props.routePath === '/draft' ? router.push({path: `/${blog.id}`}) : emits('blog-click', blog)" style="cursor: pointer;">
           {{ blog.title }}
           <v-tooltip v-if="responsive"
           activator="parent"
