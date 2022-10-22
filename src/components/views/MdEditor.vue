@@ -11,6 +11,10 @@ import MediaLiblary from './MediaLiblary.vue';
 import CategoryManager from './CategoryManager.vue';
 import TagsManager from './TagsManager.vue'
 import DraftManager from './DraftManager.vue';
+import { useRoute } from 'vue-router';
+import router from '../../router';
+
+const route = useRoute();
 
 const editor = ref("");
 
@@ -36,17 +40,20 @@ const clearable = () => {
   thumnail.value = ""
   blogId.value = ""
   blogSingle.value = ""
+  router.push("/")
 }
 
 const init = async () => {
-  clearable();
   imageList.value = await dataLoad("image");
   categoryList.value = await dataLoad("category");
   tagList.value = await dataLoad("tag");
   blogList.value = await dataLoad("blog");
+  if (route.params.blogId) {
+    blogSingle.value = await dataLoad("blog", route.params.blogId);
+    drawDraft(blogSingle.value);
+    blogId.value = route.params.blogId;
+  }
 }
-
-init()
 
 const save = async (bool) => {
   // 公開ボタンを押したとき
@@ -107,8 +114,8 @@ const save = async (bool) => {
     }
   }
 
-  alert(bool.published ? "公開しました！" : "下書きに保存しました！")
-  init();
+  alert(bool.published ? "公開しました！" : "下書きに保存しました！");
+  clearable();
 };
 
 const validation = () => {
@@ -157,7 +164,6 @@ const insertWord = (pos, text, word) => {
 const insertCate = (val) => category.value = val;
 const insertTag = (val) => tags.value = tags.value.length ? `${tags.value},${val}` : val;
 const drawDraft = (blog) => {
-  console.log(blogId.value);
   if (blogId.value) {
     if (confirm("編集中のデータは失われます")) {
       title.value = blog.title
@@ -199,6 +205,8 @@ const showSidebar = ref({
   tag: false,
   draft: false,
 })
+
+init()
 
 </script>
 
@@ -282,7 +290,7 @@ const showSidebar = ref({
     </AppSidebar>
     <!-- draftLibrary -->
     <AppSidebar v-if="showSidebar.draft" @sidebar-close="closeSidebar" :barWidth="75">
-      <DraftManager @blog-click="drawDraft" />
+      <DraftManager @blog-click="drawDraft" :responsive="true" />
     </AppSidebar>
   </div>
 </template>

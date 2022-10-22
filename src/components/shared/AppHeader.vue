@@ -2,11 +2,11 @@
 import { computed, ref, toRefs } from "@vue/reactivity";
 import { watch } from "@vue/runtime-core";
 import { useRouter } from "vue-router";
-import { useDisplay } from "vuetify/lib/framework.mjs";
 
 import { appConfig } from "../../config/app.config.js";
 
 const props = defineProps({
+  responsive: Boolean,
   isLogin: String,
   photoURL: String,
 });
@@ -16,15 +16,14 @@ const emits = defineEmits([
 ])
 
 const { isLogin } = toRefs(props);
+const { responsive } = toRefs(props);
 
 const router = useRouter()
-const display = useDisplay()
-const xs = computed(() => display.xs.value)
 
 const showSidebar = ref(false);
 watch(showSidebar, () => {
   emits("sidebar-click", showSidebar.value)
-})
+});
 
 </script>
 
@@ -35,7 +34,7 @@ watch(showSidebar, () => {
     <v-spacer></v-spacer>
     
     <template v-if="!props.isLogin">
-      <template v-if="xs">
+      <template v-if="responsive">
         <v-spacer></v-spacer>
         <v-btn :icon="showSidebar ? 'mdi-close' : 'mdi-menu'" @click="showSidebar = !showSidebar"></v-btn>
       </template>

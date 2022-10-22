@@ -1,3 +1,6 @@
-import { uuidv4 } from "@firebase/util";
-
-const uid = uuidv4();
+export const makeTableHeads = (keys, responsive, responsiveViewKeys="") => {
+  if (responsive) {
+    keys = keys.filter((_, idx) => responsiveViewKeys.includes(idx));
+  }
+  return keys;
+}

@@ -22,16 +22,24 @@ export const uploadImage = async (file, uuid) => {
   return imgURL
 }
 
-export const dataLoad = async (place) => {
-  const result = [];
-  const docRefs = await getDocs(collection(db, place));
-  
-  docRefs.forEach((d) => {
-    const data = d.data();
-    data.id = d.id
-    // console.log(data);
-    result.push(data);
-  });
+export const dataLoad = async (place, id="") => {
+  let result = [];
+
+  if (id) {
+    const docRef = doc(db, place, id);
+    const docSnap = await getDoc(docRef);
+    result = docSnap.data();
+  } else {
+    const docRefs = await getDocs(collection(db, place));
+    
+    docRefs.forEach((d) => {
+      const data = d.data();
+      data.id = d.id
+      result.push(data);
+    });
+
+    result = result.sort((a, b) => a.created_at > b.created_at ? -1 : 1);
+  }
   return result
 }
 

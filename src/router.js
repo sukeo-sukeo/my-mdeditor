@@ -9,7 +9,7 @@ import { appConfig } from "./config/app.config";
 
 const routes = [
   {
-    path: "/",
+    path: "/:blogId?",
     name: "Editor",
     component: Editor,
   },
